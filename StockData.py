@@ -53,7 +53,8 @@ class CandleData:
             if self.all_candles[index].high > max_high:
                 max_high = self.all_candles[index].high
 
-        return [min_low, max_high]
+        scale = self.get_axe_y_prices(min_low, max_high)
+        return [scale[0], scale[-1]]
 
     def print_all_candles(self):
         for cur_candle in self.all_candles:
@@ -66,32 +67,58 @@ class CandleData:
 
         return coord_y
 
+    # returns a list with the vertical labels
     @staticmethod
     def get_axe_y_prices(min_price, max_price):
         min_power_10 = int(math.log(min_price, 10))
-        max_power_10 = int(math.log(max_price, 10))
 
+        min_price_y = min_price - min_price % min_power_10
+        max_price_y = max_price
+        num_divisions = 1000
+        prices_list_y = []
+        target_num_divisions = 10
+        step_list = [.5, 1, 2, 5, 10, 50, 100, 200, 500, 1000]
+        step_list_index = -1
 
+        while (num_divisions > target_num_divisions) and (step_list_index < len(step_list)):
+            step_list_index += 1
+            step_y = step_list[step_list_index]
+            num_divisions = (max_price_y - min_price_y) / step_y
+
+        cur_price_y = min_price_y
+        div_ctr = 0
+        while div_ctr < num_divisions+1:
+            prices_list_y.append(cur_price_y)
+            cur_price_y += step_y
+            div_ctr += 1
+
+        return prices_list_y
 
     def draw_vertical_axe(self, canvas, x0, min_price, max_price, y0, display_width, display_height, num_divisions,
                           line_color='black'):
-        step_y = (max_price - min_price) / num_divisions
+        # step_y = (max_price - min_price) / num_divisions
 
-        cur_price = max_price
-        for i in range(0, num_divisions):
+        scale = self.get_axe_y_prices(min_price, max_price)
+        # scale_low = scale[0]
+        # scale_high = scale[-1]
+        i = 0
+
+        while i < len(scale):
+            cur_price = scale[i]
             y = self.convert_price_to_display_coordinates(cur_price, min_price, max_price, y0, display_height)
             canvas.create_line(x0-5, y, x0+5, y, fill=line_color, width=3)
             canvas.create_line(x0+5, y, x0+display_width, y, fill=line_color, width=1, dash=(2, 4))
             s_price = str(int(cur_price * 100)/100)
             canvas.create_text(x0 - 5 - len(s_price)*3, y, text=s_price)
-            cur_price -= step_y
+            i += 1
 
-    def draw_candles(self, canvas, num_candles, x0, y0, display_width, display_height,
+    def draw_candles(self, canvas, index_from, index_to, x0, y0, display_width, display_height,
                      color_up='green', color_down='red'):
+        num_candles = index_to - index_from
         total_col_width = display_width / num_candles
         candle_separation = int(total_col_width * .2)
         candle_width = int(total_col_width) - candle_separation
-        vertical_bounds = self.get_bounds(0, num_candles)
+        vertical_bounds = self.get_bounds(index_from, index_to)
         min_price = vertical_bounds[0]
         max_price = vertical_bounds[1]
 
@@ -101,9 +128,9 @@ class CandleData:
         # draw axes
         self.draw_vertical_axe(canvas, x0, min_price, max_price, y0, display_width, display_height, 10, '#FF00FF')
 
-        for index in range(0, num_candles):
+        for index in range(index_from, index_to):
             cur_candle = self.all_candles[index]
-            candle_x = x0 + index * int(total_col_width)
+            candle_x = x0 + (index - index_from) * int(total_col_width)
             candle_openY = self.convert_price_to_display_coordinates(cur_candle.open, min_price, max_price, y0,
                                                                      display_height)
             candle_highY = self.convert_price_to_display_coordinates(cur_candle.high, min_price, max_price, y0,

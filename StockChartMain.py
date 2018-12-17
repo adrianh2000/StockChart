@@ -53,6 +53,6 @@ blue_shades = ['#9CC0FE', '#032495']
 classic_shades = ['green', 'red']
 grayscale_shades = ['white', 'black']
 purple_shades = ['#EDCFFF', '#AC29FA']
-cd.draw_candles(w, 80, 100, 100, canvas_width - 200, canvas_height - 200, purple_shades[0], purple_shades[1])
+cd.draw_candles(w, 2100, 2180, 100, 100, canvas_width - 200, canvas_height - 200, purple_shades[0], purple_shades[1])
 
 mainloop()
